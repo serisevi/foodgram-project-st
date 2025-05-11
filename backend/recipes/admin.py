@@ -7,14 +7,18 @@ from .models import Ingredient, Recipe, RecipeIngredient
 
 
 class SubscribersInline(admin.TabularInline):
+    """Инлайн для подписчиков пользователя."""
+    
     model = Subscribers
     min_num = 1
 
 
 class UserAdmin(UserAdmin):
+    """Админ-модель для управления пользователями."""
 
     @admin.display(description='Подписчики')
     def get_subscribers(self, obj):
+        """Получает список подписчиков пользователя."""
         subscribers = Subscribers.objects.filter(author_id=obj.id)
         return [i.user for i in subscribers]
 
@@ -32,6 +36,8 @@ class UserAdmin(UserAdmin):
 
 
 class IngredientAdmin(ImportExportActionModelAdmin, admin.ModelAdmin):
+    """Админ-модель для управления ингредиентами."""
+    
     list_display = (
         'id',
         'name',
@@ -43,20 +49,27 @@ class IngredientAdmin(ImportExportActionModelAdmin, admin.ModelAdmin):
 
 
 class RecipeIngredientInline(admin.TabularInline):
+    """Инлайн для ингредиентов рецепта."""
+    
     model = RecipeIngredient
     min_num = 1
 
 
 class RecipeAdmin(admin.ModelAdmin):
+    """Админ-модель для управления рецептами."""
 
     @admin.display(description='Ингредиенты')
     def get_ingredients(self, obj):
+        """Получает список ингредиентов рецепта."""
         ingredients = obj.recipeingredients.all()
         return (
             ', '.join(
-                [f'{ingredient.ingredients} - {ingredient.amount} '
-                 f'{ingredient.ingredients.measurement_unit}'
-                 for ingredient in ingredients])
+                [
+                    f'{ingredient.ingredients} - {ingredient.amount} '
+                    f'{ingredient.ingredients.measurement_unit}'
+                    for ingredient in ingredients
+                ]
+            )
         )
 
     inlines = (RecipeIngredientInline,)

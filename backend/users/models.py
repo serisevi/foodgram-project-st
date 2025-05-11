@@ -6,6 +6,8 @@ from foodgram.constants import NAME_MAX_LENGTH
 
 
 class User(AbstractUser):
+    """Модель пользователя."""
+    
     REQUIRED_FIELDS = [
         'username',
         'first_name',
@@ -43,15 +45,19 @@ class User(AbstractUser):
     )
 
     class Meta:
+        """Метаданные модели."""
         ordering = ('username',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
     def __str__(self):
+        """Строковое представление модели."""
         return self.username
 
 
 class Subscribers(models.Model):
+    """Модель для хранения подписок пользователей."""
+    
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -68,6 +74,7 @@ class Subscribers(models.Model):
     )
 
     class Meta:
+        """Метаданные модели."""
         ordering = ('author',)
         verbose_name = 'Автор - подписчик'
         verbose_name_plural = verbose_name
@@ -83,4 +90,5 @@ class Subscribers(models.Model):
         ]
 
     def __str__(self):
+        """Строковое представление модели."""
         return f"{self.author} - {self.user}"
