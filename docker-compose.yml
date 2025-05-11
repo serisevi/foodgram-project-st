@@ -1,4 +1,4 @@
-version: '3'
+version: '3.9'
 
 volumes:
   pg_data:
@@ -13,7 +13,9 @@ services:
       - pg_data:/var/lib/postgresql/data
   
   backend:
-    build: ./backend/
+    image: serisevi/foodgram-backend:latest
+    build:
+      context: ./backend/
     env_file: .env
     ports:
     - 8000:8000
@@ -25,14 +27,18 @@ services:
       - db
   
   frontend:
-    build: ./frontend/
+    image: serisevi/foodgram-frontend:latest
+    build:
+      context: ./frontend/
     env_file: .env
     command: cp -r /app/build/. /static/
     volumes:
       - static:/static
   
   gateway:
-    build: ./nginx/
+    image: serisevi/foodgram-nginx:latest
+    build:
+      context: ./nginx/
     env_file: .env
     volumes:
       - static:/static
