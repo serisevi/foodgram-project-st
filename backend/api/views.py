@@ -27,11 +27,8 @@ from .serializers import (AddRecipeSerializer, FavoriteRecipesSerializer,
 
 
 class ShortLinkRedirectView(View):
-    """View для перенаправления по коротким ссылкам на рецепты."""
     def get(self, request, id):
-        """Перенаправление на страницу рецепта."""
         recipe = get_object_or_404(Recipe, id=id)
-        # Перенаправляем на фронтенд-страницу рецепта
         return HttpResponseRedirect(f'/recipes/{recipe.id}')
 
 
@@ -91,12 +88,10 @@ class AvatarView(APIView):
 
 
 class CustomUserViewSet(UserViewSet):
-    """Вьюсет для модели Пользователя."""
     pagination_class = Pagination
     http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
     def get_permissions(self):
-        """Настройка разрешений."""
         if self.action == 'me':
             self.permission_classes = [IsAuthenticated, ]
         return super(UserViewSet, self).get_permissions()
@@ -105,8 +100,6 @@ class CustomUserViewSet(UserViewSet):
             detail=False,
             permission_classes=[IsAuthenticated, ])
     def subscriptions(self, request):
-        """Возвращает список авторов рецептов, на которых подписан текущий
-           пользователь. В выдачу добавляются рецепты авторов и их кол-во."""
         subscriptions = Subscribers.objects.filter(user=request.user)
         pages = self.paginate_queryset(subscriptions)
         serializer = SubscriptionsListSerializer(pages,
@@ -119,7 +112,6 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[IsAuthenticated, ],
             url_path=r'(?P<id>\d+)/subscribe')
     def subscribe(self, request, id):
-        """Подписаться или отписаться от пользователя."""
         author = get_object_or_404(User, id=id)
         data = {'author': author.id,
                 'user': request.user.id}
@@ -140,7 +132,6 @@ class CustomUserViewSet(UserViewSet):
 
 
 class IngredientsViewSet(viewsets.ModelViewSet):
-    """Вьюсет для модели Ингридиентов."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
@@ -151,7 +142,6 @@ class IngredientsViewSet(viewsets.ModelViewSet):
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
-    """Вьюсет для модели Рецептов."""
     queryset = Recipe.objects.all()
     serializer_class = GetRecipeSerializer
     pagination_class = Pagination
@@ -168,36 +158,31 @@ class RecipesViewSet(viewsets.ModelViewSet):
             permission_classes=[AllowAny],
             url_path='get-link')
     def get_short_link(self, request, pk=None):
-        """Генерация короткой ссылки на рецепт."""
         recipe = get_object_or_404(Recipe, id=pk)
-        
-        # Получаем базовый URL из запроса
         base_url = request.build_absolute_uri('/').rstrip('/')
         short_link = f"{base_url}/s/{recipe.id}"
-        
         return Response({'short-link': short_link})
 
     @action(methods=['GET'],
             detail=False,
             permission_classes=[IsAuthenticated, ])
     def download_shopping_cart(self, request):
-        """Скачать файл со списком покупок. Формат файла: file.txt"""
         shoppingcart = ShoppingCart.objects.filter(
             user=request.user).values('recipe_id__ingredients__name').annotate(
                 amount=F('recipe_id__recipeingredients__amount'),
-                measurement_unit=F('recipe_id__ingredients__measurement_unit')
+                measure=F('recipe_id__ingredients__measurement_unit')
         ).order_by('recipe_id__ingredients__name')
         ingredients = {}
         for ingredient in shoppingcart:
-            ingredient_name = ingredient['recipe_id__ingredients__name']
+            name = ingredient['recipe_id__ingredients__name']
             amount = ingredient['amount']
-            measurement_unit = ingredient['measurement_unit']
-            if ingredient_name not in ingredients:
-                ingredients[ingredient_name] = (amount, measurement_unit)
+            measure = ingredient['measure']
+            if name not in ingredients:
+                ingredients[name] = (amount, measure)
             else:
-                ingredients[ingredient_name] = (
-                    ingredients[ingredient_name][0] + amount,
-                    measurement_unit)
+                ingredients[name] = (
+                    ingredients[name][0] + amount,
+                    measure)
         with open("shopping_cart.txt", "w") as file:
             file.write('Ваш список покупок:' + '\n')
             for ingredient, amount in ingredients.items():
@@ -210,7 +195,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated, ],
             url_path=r'(?P<id>\d+)/shopping_cart')
     def shopping_cart(self, request, id):
-        """Добавление или удаление рецепта в список покупок."""
         recipe = get_object_or_404(Recipe, id=id)
         if request.method == 'POST':
             shoppingcart_status = ShoppingCart.objects.filter(
@@ -238,7 +222,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated, ],
             url_path=r'(?P<id>\d+)/favorite')
     def favorite(self, request, id):
-        """Добавление или удаление рецепта в избранное."""
         recipe = get_object_or_404(Recipe, id=id)
         if request.method == 'POST':
             favorite_status = FavoriteRecipes.objects.filter(

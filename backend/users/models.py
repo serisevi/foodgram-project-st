@@ -6,7 +6,6 @@ from foodgram.constants import NAME_MAX_LENGTH
 
 
 class User(AbstractUser):
-    """Модель пользователя."""
     REQUIRED_FIELDS = [
         'username',
         'first_name',
@@ -38,7 +37,7 @@ class User(AbstractUser):
     )
     avatar = models.ImageField(
         upload_to='avatar/images/',
-        verbose_name='Картинка, закодированная в Base64',
+        verbose_name='Картинка, закодированная в base64',
         blank=True,
         null=True,
     )
@@ -53,7 +52,6 @@ class User(AbstractUser):
 
 
 class Subscribers(models.Model):
-    """Модель подписок на автора рецепта."""
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

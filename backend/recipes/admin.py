@@ -7,18 +7,14 @@ from .models import Ingredient, Recipe, RecipeIngredient
 
 
 class SubscribersInline(admin.TabularInline):
-    """Настройка отображения подписчиков на автора рецептов и наоборот."""
     model = Subscribers
     min_num = 1
 
 
 class UserAdmin(UserAdmin):
-    """Настройка Админки-Пользователей."""
 
     @admin.display(description='Подписчики')
     def get_subscribers(self, obj):
-        """Функция для корректного отображения подписчиков в
-           list_display Админке-Пользователей."""
         subscribers = Subscribers.objects.filter(author_id=obj.id)
         return [i.user for i in subscribers]
 
@@ -36,8 +32,6 @@ class UserAdmin(UserAdmin):
 
 
 class IngredientAdmin(ImportExportActionModelAdmin, admin.ModelAdmin):
-    """Настройка Админки-Ингридиентов + добавление возможности импорта/экспорта
-    данных из CSV-файлов в БД из Админки."""
     list_display = (
         'id',
         'name',
@@ -49,18 +43,14 @@ class IngredientAdmin(ImportExportActionModelAdmin, admin.ModelAdmin):
 
 
 class RecipeIngredientInline(admin.TabularInline):
-    """Настройка отображения ингридиентов в рецепте."""
     model = RecipeIngredient
     min_num = 1
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    """Настройка Админки-Рецептов."""
 
     @admin.display(description='Ингредиенты')
     def get_ingredients(self, obj):
-        """Функция для корректного отображения ингредиентов в list_display
-           Админке-Рецептов."""
         ingredients = obj.recipeingredients.all()
         return (
             ', '.join(
