@@ -13,21 +13,19 @@ services:
       - pg_data:/var/lib/postgresql/data
   
   backend:
-    image: serisevi/foodgram-backend:latest
     build:
       context: ./backend/
     env_file: .env
     ports:
     - 8000:8000
     volumes:
-      - static:/static
+      - static:/app/static
       - media:/app/media
       - ../data:/app/data
     depends_on:
       - db
   
   frontend:
-    image: serisevi/foodgram-frontend:latest
     build:
       context: ./frontend/
     env_file: .env
@@ -36,7 +34,6 @@ services:
       - static:/static
   
   gateway:
-    image: serisevi/foodgram-nginx:latest
     build:
       context: ./nginx/
     env_file: .env

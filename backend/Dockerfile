@@ -8,4 +8,8 @@ RUN python -m pip install --upgrade pip && pip3 install -r requirements.txt --no
 
 COPY . .
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "foodgram.wsgi"]
+# Создаем директории для статических файлов
+RUN mkdir -p /app/static
+
+# Запускаем сбор статических файлов при старте контейнера
+CMD /bin/sh -c "python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 foodgram.wsgi"
