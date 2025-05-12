@@ -15,9 +15,9 @@ docker-compose build
 
 # Тегирование образов для Docker Hub
 echo "Тегирование образов..."
-docker tag foodgram-project-react_backend serisevi/foodgram-backend:$VERSION
-docker tag foodgram-project-react_frontend serisevi/foodgram-frontend:$VERSION
-docker tag foodgram-project-react_gateway serisevi/foodgram-nginx:$VERSION
+docker tag foodgram-st_backend serisevi/foodgram-backend:$VERSION
+docker tag foodgram-st_frontend serisevi/foodgram-frontend:$VERSION
+docker tag foodgram-st_gateway serisevi/foodgram-nginx:$VERSION
 
 # Отправка образов в Docker Hub
 echo "Отправка образов в Docker Hub..."
