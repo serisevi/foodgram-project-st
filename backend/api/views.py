@@ -1,19 +1,30 @@
 import base64
 import logging
+import os
+from io import BytesIO
+from datetime import datetime
 
 from django.core.files.base import ContentFile
 from django.db.models import F
-from django.http import FileResponse, HttpResponseRedirect
+from django.http import FileResponse, HttpResponseRedirect, HttpResponse
 from django.shortcuts import redirect
+from django.template.loader import get_template
 from django.urls import reverse
 from django.views import View
 from djoser.views import UserViewSet
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import cm
+from reportlab.lib import colors
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404, RetrieveAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from xhtml2pdf import pisa
 
 from recipes.models import (
     FavoriteRecipes, Ingredient, Recipe, ShoppingCart
@@ -205,12 +216,13 @@ class RecipesViewSet(viewsets.ModelViewSet):
         return Response({'short-link': short_link})
 
     @action(
-        methods=['GET'],
-        detail=False,
-        permission_classes=[IsAuthenticated, ]
+    methods=['GET'],
+    detail=False,
+    permission_classes=[IsAuthenticated, ]
     )
     def download_shopping_cart(self, request):
-        """Скачивает список покупок."""
+        """Скачивает список покупок в формате TXT."""
+        # Получаем данные из корзины
         shoppingcart = ShoppingCart.objects.filter(
             user=request.user
         ).values('recipe_id__ingredients__name').annotate(
@@ -218,6 +230,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             measure=F('recipe_id__ingredients__measurement_unit')
         ).order_by('recipe_id__ingredients__name')
         
+        # Агрегируем ингредиенты
         ingredients = {}
         for ingredient in shoppingcart:
             name = ingredient['recipe_id__ingredients__name']
@@ -231,13 +244,30 @@ class RecipesViewSet(viewsets.ModelViewSet):
                     measure
                 )
         
-        with open("shopping_cart.txt", "w") as file:
-            file.write('Ваш список покупок:' + '\n')
-            for ingredient, amount in ingredients.items():
-                file.write(f'{ingredient} - {amount[0]}({amount[1]}).' + '\n')
-            file.close()
+        # Формируем текстовый файл
+        content = "FOODGRAM - СПИСОК ПОКУПОК\n\n"
+        content += f"Пользователь: {request.user.username}\n"
+        content += f"Дата: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
         
-        return FileResponse(open('shopping_cart.txt', 'rb'))
+        if not ingredients:
+            content += "Ваш список покупок пуст."
+        else:
+            content += "Ингредиенты:\n\n"
+            for i, (ingredient, data) in enumerate(ingredients.items(), 1):
+                amount, measure = data
+                content += f"{i}. {ingredient} - {amount} {measure}\n"
+        
+        # Создаем и возвращаем текстовый файл
+        text_buffer = BytesIO()
+        text_buffer.write(content.encode('utf-8'))
+        text_buffer.seek(0)
+        
+        return FileResponse(
+            text_buffer,
+            as_attachment=True,
+            filename='shopping_list.txt',
+            content_type='text/plain; charset=utf-8'
+        )
 
     @action(
         methods=['POST', 'DELETE'],
