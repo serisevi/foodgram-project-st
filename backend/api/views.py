@@ -245,14 +245,14 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 )
         
         # Формируем текстовый файл
-        content = "FOODGRAM - СПИСОК ПОКУПОК\n\n"
+        content = "Foodgram - список покупок\n"
         content += f"Пользователь: {request.user.username}\n"
         content += f"Дата: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
         
         if not ingredients:
             content += "Ваш список покупок пуст."
         else:
-            content += "Ингредиенты:\n\n"
+            content += "Ингредиенты:\n"
             for i, (ingredient, data) in enumerate(ingredients.items(), 1):
                 amount, measure = data
                 content += f"{i}. {ingredient} - {amount} {measure}\n"
