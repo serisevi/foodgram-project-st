@@ -1,30 +1,19 @@
 import base64
 import logging
-import os
 from io import BytesIO
 from datetime import datetime
 
 from django.core.files.base import ContentFile
 from django.db.models import F
-from django.http import FileResponse, HttpResponseRedirect, HttpResponse
-from django.shortcuts import redirect
-from django.template.loader import get_template
-from django.urls import reverse
+from django.http import FileResponse, HttpResponseRedirect
 from django.views import View
 from djoser.views import UserViewSet
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.units import cm
-from reportlab.lib import colors
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.generics import get_object_or_404, RetrieveAPIView
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from xhtml2pdf import pisa
 
 from recipes.models import (
     FavoriteRecipes, Ingredient, Recipe, ShoppingCart
