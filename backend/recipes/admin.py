@@ -4,7 +4,8 @@ from django.utils.html import format_html
 from import_export.admin import ImportExportActionModelAdmin
 
 from users.models import Subscribers, User
-from .models import Ingredient, Recipe, RecipeIngredient
+from .models import (Ingredient, Recipe, RecipeIngredient,
+                    FavoriteRecipes, ShoppingCart)
 
 
 # Настройка заголовков админ-сайта
@@ -112,6 +113,11 @@ class RecipeAdmin(admin.ModelAdmin):
             )
         )
     
+    @admin.display(description='В избранном')
+    def favorite_count(self, obj):
+        """Отображает количество пользователей, добавивших рецепт в избранное."""
+        return obj.favoriterecipes.count()
+
     @admin.display(description='Изображение')
     def image_preview(self, obj):
         """Отображает изображение рецепта."""
@@ -154,6 +160,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'author_with_avatar',
         'cooking_time',
         'get_ingredients',
+        'favorite_count',
     )
     search_fields = ('name', 'author__username')
     list_filter = ('author', 'cooking_time')
@@ -176,6 +183,43 @@ class RecipeAdmin(admin.ModelAdmin):
     save_on_top = True
 
 
+class RecipeIngredientAdmin(admin.ModelAdmin):
+    """Админ-модель для управления ингредиентами в рецептах."""
+    
+    list_display = (
+        'id',
+        'recipe',
+        'ingredients',
+        'amount',
+    )
+    search_fields = ('recipe__name', 'ingredients__name')
+
+
+class FavoriteRecipesAdmin(admin.ModelAdmin):
+    """Админ-модель для управления избранными рецептами."""
+    
+    list_display = (
+        'id',
+        'user',
+        'recipe',
+    )
+    search_fields = ('user__username', 'recipe__name')
+
+
+class ShoppingCartAdmin(admin.ModelAdmin):
+    """Админ-модель для управления списком покупок."""
+    
+    list_display = (
+        'id',
+        'user',
+        'recipe',
+    )
+    search_fields = ('user__username', 'recipe__name')
+
+
 admin.site.register(User, UserAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
+admin.site.register(RecipeIngredient, RecipeIngredientAdmin)
+admin.site.register(FavoriteRecipes, FavoriteRecipesAdmin)
+admin.site.register(ShoppingCart, ShoppingCartAdmin)

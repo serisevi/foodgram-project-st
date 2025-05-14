@@ -197,7 +197,6 @@ class AddRecipeSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         ingredients = data.get('ingredients')
-        image = data.get('image')
         if not ingredients:
             raise serializers.ValidationError('Укажите необходимые'
                                               ' ингридиенты для рецепта!')
@@ -206,8 +205,9 @@ class AddRecipeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Не указывайте одинаковые '
                                               'ингридиенты при создании '
                                               'рецепта!')
-        if not image:
-            raise serializers.ValidationError('Укажите картинку для'
+        # Проверяем наличие изображения только при создании рецепта
+        if not self.instance and not data.get('image'):
+            raise serializers.ValidationError('Укажите картинку для '
                                               'рецепта!')
         return data
 

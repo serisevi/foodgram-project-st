@@ -126,7 +126,7 @@ class RecipeIngredient(models.Model):
     class Meta:
         """Метаданные модели."""
         ordering = ('recipe',)
-        verbose_name = 'Ингредиент - рецепта'
+        verbose_name = 'Ингредиенты рецептов'
         verbose_name_plural = verbose_name
         constraints = [
             models.UniqueConstraint(
@@ -199,7 +199,7 @@ class FavoriteRecipes(models.Model):
     class Meta:
         """Метаданные модели."""
         ordering = ('recipe',)
-        verbose_name = 'Рецепт - пользователь'
+        verbose_name = 'Избранное'
         verbose_name_plural = verbose_name
         constraints = [
             models.UniqueConstraint(
