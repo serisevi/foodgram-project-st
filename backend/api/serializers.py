@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from foodgram.constants import DEFAULT_PAGES_LIMIT
 from recipes.models import (FavoriteRecipes, Ingredient, Recipe,
-                          RecipeIngredient, ShoppingCart)
+                            RecipeIngredient, ShoppingCart)
 from users.models import Subscribers, User
 
 
@@ -151,13 +151,13 @@ class GetRecipeSerializer(serializers.ModelSerializer):
         user = self.context.get('request')
         return bool(user and user.user.is_authenticated
                     and ShoppingCart.objects.filter(
-                        recipe=obj,user=user.user).exists())
+                        recipe=obj, user=user.user).exists())
 
     def get_is_favorited(self, obj):
         user = self.context.get('request')
         return bool(user and user.user.is_authenticated
                     and FavoriteRecipes.objects.filter(
-                        recipe=obj,user=user.user).exists())
+                        recipe=obj, user=user.user).exists())
 
 
 class AddRecipeIngredientSerializer(serializers.ModelSerializer):
@@ -205,8 +205,11 @@ class AddRecipeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Не указывайте одинаковые '
                                               'ингридиенты при создании '
                                               'рецепта!')
-        # Проверяем наличие изображения только при создании рецепта
-        if not self.instance and not data.get('image'):
+        # Проверяем наличие изображения при создании рецепта
+        # или если оно предоставлено в запросе при обновлении
+        if 'image' in data and not data.get('image'):
+            raise serializers.ValidationError('Поле image не может быть пустым')
+        elif not self.instance and not data.get('image'):
             raise serializers.ValidationError('Укажите картинку для '
                                               'рецепта!')
         return data

@@ -4,13 +4,13 @@ from rest_framework import permissions
 class IsAuthorAdminOrReadOnly(permissions.BasePermission):
     """
     Пользовательское разрешение для проверки доступа.
-    
+
     Разрешает:
     - Анонимным пользователям только чтение
     - Авторизованным пользователям создавать объекты
     - Изменять и удалять объекты только их авторам или админам
     """
-    
+
     def has_permission(self, request, view):
         """Проверяет общие права доступа на уровне запроса."""
         return (

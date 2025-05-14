@@ -1,5 +1,4 @@
 """Константы для проекта Foodgram."""
-from django.core.validators import RegexValidator
 
 # Ограничения длины строковых полей
 NAME_MAX_LENGTH = 150

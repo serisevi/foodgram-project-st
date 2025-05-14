@@ -7,7 +7,7 @@ from foodgram.constants import NAME_MAX_LENGTH
 
 class User(AbstractUser):
     """Модель пользователя."""
-    
+
     REQUIRED_FIELDS = [
         'username',
         'first_name',
@@ -57,7 +57,7 @@ class User(AbstractUser):
 
 class Subscribers(models.Model):
     """Модель для хранения подписок пользователей."""
-    
+
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
