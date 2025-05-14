@@ -208,7 +208,8 @@ class AddRecipeSerializer(serializers.ModelSerializer):
         # Проверяем наличие изображения при создании рецепта
         # или если оно предоставлено в запросе при обновлении
         if 'image' in data and not data.get('image'):
-            raise serializers.ValidationError('Поле image не может быть пустым')
+            raise serializers.ValidationError('Укажите картинку для '
+                                              'рецепта!')
         elif not self.instance and not data.get('image'):
             raise serializers.ValidationError('Укажите картинку для '
                                               'рецепта!')
