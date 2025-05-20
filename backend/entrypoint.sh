@@ -58,6 +58,38 @@ else:
     print('Superuser already exists')
 "
 
+# Импортируем ингредиенты из ingredients.json в таблицу ingredients
+echo "Loading ingredients data..."
+if [ -f "/app/data/ingredients.json" ]; then
+    echo "Found ingredients.json file, loading data into ingredients table..."
+    python manage.py shell -c "
+import json
+from recipes.models import Ingredient
+
+# Очищаем таблицу ингредиентов перед импортом
+Ingredient.objects.all().delete()
+
+# Загружаем данные из JSON файла
+with open('/app/data/ingredients.json', 'r', encoding='utf-8') as f:
+    ingredients_data = json.load(f)
+
+# Импортируем данные в таблицу ingredients
+for item in ingredients_data:
+    Ingredient.objects.create(
+        name=item.get('name'),
+        measurement_unit=item.get('measurement_unit')
+    )
+
+print(f'Successfully imported {len(ingredients_data)} ingredients into the database')
+"
+    echo "Ingredients loaded successfully into ingredients table"
+else
+    echo "Warning: /app/data/ingredients.json file not found!"
+    # Вывод содержимого каталога для отладки
+    echo "Contents of /app/data/ directory:"
+    ls -la /app/data/
+fi
+
 # Запускаем сервер
 echo "Starting server..."
 gunicorn foodgram.wsgi:application --bind 0.0.0.0:8000 
