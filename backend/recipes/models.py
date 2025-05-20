@@ -1,4 +1,4 @@
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator
 from django.db import models
 
 from foodgram.constants import TEXT_MAX_LENGTH
@@ -9,10 +9,9 @@ class Ingredient(models.Model):
     """Модель для хранения ингредиентов."""
 
     name = models.CharField(
-        unique=True,
         max_length=TEXT_MAX_LENGTH,
-        verbose_name='Название ингредиента',
-        help_text='Укажите название ингредиента'
+        verbose_name='Название',
+        help_text='Укажите название'
     )
     measurement_unit = models.CharField(
         max_length=TEXT_MAX_LENGTH,
@@ -22,7 +21,7 @@ class Ingredient(models.Model):
 
     class Meta:
         """Метаданные модели."""
-        ordering = ('id', 'name')
+        ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         constraints = [
@@ -44,43 +43,32 @@ class Recipe(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='recipes',
-        verbose_name='Автор рецепта',
-        help_text='Укажите автора рецепта'
+        verbose_name='Автор',
+        help_text='Укажите автора'
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         through='RecipeIngredient',
         related_name='recipes',
-        verbose_name='Ингредиент рецепта',
-    )
-    is_favorited = models.BooleanField(
-        default=True,
-        verbose_name='Находится в избранном',
-        help_text='Отметьте рецепт в избранное'
-    )
-    is_in_shopping_cart = models.BooleanField(
-        default=True,
-        verbose_name='Находится в корзине',
-        help_text='Отложите рецепт в корзину'
+        verbose_name='Ингредиент',
     )
     image = models.ImageField(
-        verbose_name='Изображение рецепта',
-        help_text='Укажите изображение рецепта',
+        verbose_name='Изображение',
+        help_text='Укажите изображение',
         upload_to='recipes_images'
     )
     name = models.CharField(
         max_length=TEXT_MAX_LENGTH,
-        verbose_name='Название рецепта',
-        help_text='Укажите название рецепта'
+        verbose_name='Название',
+        help_text='Укажите название'
     )
     text = models.TextField(
-        verbose_name='Описание рецепта',
-        help_text='Укажите описание рецепта'
+        verbose_name='Описание',
+        help_text='Укажите описание'
     )
-    cooking_time = models.PositiveSmallIntegerField(
+    cooking_time = models.PositiveIntegerField(
         validators=[
             MinValueValidator(1, 'Минимальное время приготовления'),
-            MaxValueValidator(32000, 'Максимальное время приготовления'),
         ],
         verbose_name='Время приготовления',
         help_text='Укажите время приготовления, от 1 мин'
@@ -104,20 +92,20 @@ class RecipeIngredient(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         related_name='recipeingredients',
-        verbose_name='Название рецепта',
-        help_text='Укажите название рецепта'
+        verbose_name='Рецепт',
+        help_text='Укажите рецепт'
     )
-    ingredients = models.ForeignKey(
+    ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
         related_name='recipeingredients',
-        verbose_name='Ингредиент рецепта',
-        help_text='Укажите ингредиент рецепта'
+        verbose_name='Ингредиент',
+        help_text='Укажите ингредиент',
+        default=1  # Временное значение для миграции
     )
     amount = models.PositiveSmallIntegerField(
         validators=[
             MinValueValidator(1, 'Минимальное кол-во ингредиента'),
-            MaxValueValidator(32000, 'Максимальное кол-во ингредиента'),
         ],
         verbose_name='Кол-во ингредиента',
         help_text='Укажите кол-во ингредиента, от 1 и более'
@@ -130,7 +118,7 @@ class RecipeIngredient(models.Model):
         verbose_name_plural = verbose_name
         constraints = [
             models.UniqueConstraint(
-                fields=['recipe', 'ingredients'],
+                fields=['recipe', 'ingredient'],
                 name='unique_recipe_ingredients'
             )
         ]
@@ -138,8 +126,8 @@ class RecipeIngredient(models.Model):
     def __str__(self):
         """Строковое представление модели."""
         return (
-            f'{self.recipe}: {self.ingredients} - {self.amount} '
-            f'{self.ingredients.measurement_unit}'
+            f'{self.recipe}: {self.ingredient} - {self.amount} '
+            f'{self.ingredient.measurement_unit}'
         )
 
 

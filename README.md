@@ -1,12 +1,25 @@
 # Foodgram - Продуктовый помощник
 
-## Технологии
-- Python 3.9
-- Django 3.2
-- Django REST framework
-- PostgreSQL
-- Docker
-- Nginx
+## Автор проекта - Минаев Александр Викторович
+[ВКонтакте](vk.com/serisevi)
+[Телеграмм](t.me/serisevi)
+
+## Стек технологий
+
+- **Backend**:
+  - Python 3.9
+  - Django 3.2
+  - Django REST Framework
+  - PostgreSQL
+  - Docker
+
+- **Frontend**:
+  - React
+  - Node.js
+
+- **Инфраструктура**:
+  - Nginx 1.25
+  - Docker Compose
 
 ## Развертывание проекта
 
@@ -34,65 +47,30 @@ DEBUG=True
 docker-compose up --build -d
 ```
 
-### 4. Настройка базы данных
-
-Откройте Git Bash и выполните следующие шаги:
-
-1. Подключитесь к PostgreSQL в контейнере:
-```bash
-docker exec -it foodgram-st-db-1 psql -U foodgram_user
-```
-> **Примечание**: 
-> - При необходимости добавьте в начало команды `winpty`
-> - `foodgram-st-db-1` - имя контейнера с базой данных
-> - `foodgram_user` - имя пользователя из файла .env
-
-2. Создайте базу данных:
-```sql
-create database foodgram;
-```
-> **Примечание**: `foodgram` - имя базы данных из файла .env
-
-3. Проверьте подключение:
-```sql
-\c foodgram
-```
-> Для выхода нажмите `CTRL+Z`
-
-### 5. Настройка бэкенда
-
-Откройте Docker Desktop и перейдите в контейнер backend в раздел Exec.
-
-1. Выполните миграции:
-```bash
-python manage.py makemigrations
-python manage.py migrate
-```
-
-2. Создайте суперпользователя:
-```bash
-python manage.py createsuperuser
-```
-
-### 6. Импорт начальных данных
+### 4. Импорт начальных данных
 
 1. Откройте админ-панель в браузере:
-```
-http://localhost/admin
-```
+[Админ-панель](http://localhost/admin)
 
 2. Войдите используя учетные данные суперпользователя
+```
+Данные по умолчанию:
+Email: admin@foodgram.ru
+Пароль: Test@12345
+```
 
 3. В разделе "Ингредиенты" нажмите кнопку "Импорт" и загрузите список ингредиентов из файла:
 ```
 foodgram-st/data/ingredient.json
 ```
 
-### 7. Завершение установки
+### 5. Завершение установки
 
 Поздравляем! Сайт успешно развернут и готов к использованию.
+[Сайт](http://localhost/)
 
 ## Дополнительная информация
 
-- Для выгрузки на Docker Hub используйте скрипт `docker-push.sh`
-- Для тестирования API используйте коллекцию Postman
+1. Для выгрузки на Docker Hub используйте скрипт `docker-push.sh`
+2. Для тестирования API используйте коллекцию Postman
+3. Для доступа к [документации API](http://localhost/api/docs/) перейдите в папку infra и выполните команду "docker-compose up -d --build", после чего перейдите сюда

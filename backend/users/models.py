@@ -19,27 +19,28 @@ class User(AbstractUser):
         unique=True,
         max_length=NAME_MAX_LENGTH,
         validators=[UnicodeUsernameValidator(), ],
-        verbose_name='Никнейм пользователя',
-        help_text='Укажите никнейм пользователя'
+        verbose_name='Никнейм',
+        help_text='Укажите никнейм'
     )
     first_name = models.CharField(
         max_length=NAME_MAX_LENGTH,
-        verbose_name='Имя пользователя',
-        help_text='Укажите имя пользователя'
+        verbose_name='Имя',
+        help_text='Укажите имя'
     )
     last_name = models.CharField(
         max_length=NAME_MAX_LENGTH,
-        verbose_name='Фамилия пользователя',
-        help_text='Укажите фамилию пользователя'
+        verbose_name='Фамилия',
+        help_text='Укажите фамилию'
     )
     email = models.EmailField(
         unique=True,
-        verbose_name='E-mail пользователя',
-        help_text='Укажите e-mail пользователя'
+        max_length=NAME_MAX_LENGTH,
+        verbose_name='E-mail',
+        help_text='Укажите e-mail'
     )
     avatar = models.ImageField(
         upload_to='avatar/images/',
-        verbose_name='Картинка, закодированная в base64',
+        verbose_name='Аватар',
         blank=True,
         null=True,
     )
@@ -62,21 +63,21 @@ class Subscribers(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='authors',
-        verbose_name='Автор рецептов',
-        help_text='Укажите автора рецепта'
+        verbose_name='Автор',
+        help_text='Укажите автора'
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='subscribers',
-        verbose_name='Пользователь-подписчик',
-        help_text='Укажите пользователя-подписчика'
+        verbose_name='Подписчик',
+        help_text='Укажите подписчика'
     )
 
     class Meta:
         """Метаданные модели."""
         ordering = ('author',)
-        verbose_name = 'Автор - подписчик'
+        verbose_name = 'Подписки'
         verbose_name_plural = verbose_name
         constraints = [
             models.UniqueConstraint(

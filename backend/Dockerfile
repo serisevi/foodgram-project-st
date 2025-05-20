@@ -1,15 +1,27 @@
-FROM python:3.9
+FROM python:3.9-slim
 
 WORKDIR /app
 
+# Установка необходимых системных пакетов
+RUN apt-get update && \
+    apt-get install -y \
+    postgresql-client \
+    netcat-traditional && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Копируем requirements.txt и устанавливаем зависимости
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN python -m pip install --upgrade pip && pip3 install -r requirements.txt --no-cache-dir
-
+# Копируем код проекта
 COPY . .
 
-# Создаем директории для статических файлов
-RUN mkdir -p /app/static
+# Создаем необходимые директории
+RUN mkdir -p /app/static/ /app/media/
 
-# Запускаем сбор статических файлов при старте контейнера
-CMD /bin/sh -c "python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 foodgram.wsgi"
+# Делаем entrypoint.sh исполняемым
+RUN chmod +x entrypoint.sh
+
+# Запускаем entrypoint скрипт
+ENTRYPOINT ["./entrypoint.sh"]
