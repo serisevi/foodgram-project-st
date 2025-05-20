@@ -71,4 +71,4 @@ foodgram-st/data/ingredient.json
 
 1. Для выгрузки на Docker Hub используйте скрипт `docker-push.sh`
 2. Для тестирования API используйте коллекцию Postman
-3. Для доступа к [документации API](http://localhost/api/docs/) перейдите в папку infra и выполните команду "docker-compose up -d --build", после чего перейдите сюда
+3. Для доступа к [документации API](http://localhost/api/docs/) перейдите в папку infra и выполните команду "docker-compose up -d --build"
