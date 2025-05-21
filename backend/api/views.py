@@ -3,12 +3,13 @@ from datetime import datetime
 
 from django.core.files.base import ContentFile
 from django.db.models import F
-from django.http import FileResponse, HttpResponseRedirect
+from django.http import FileResponse
+from django.shortcuts import redirect, get_object_or_404
+from django.urls import reverse
 from django.views import View
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -28,9 +29,10 @@ from .serializers import (
 class ShortLinkRedirectView(View):
     """Представление для перенаправления коротких ссылок на рецепты."""
 
-    def get(self, request, id):
+    def get(self, request, pk):
         """Обработка GET-запроса для перенаправления на страницу рецепта."""
-        return HttpResponseRedirect(f'/recipes/{id}')
+        # Перенаправляем на страницу рецепта в UI
+        return redirect(f'/recipes/{pk}/')
 
 
 class CustomUserViewSet(UserViewSet):
@@ -199,7 +201,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def get_short_link(self, request, pk=None):
         """Генерирует короткую ссылку на рецепт."""
         recipe = get_object_or_404(Recipe, id=pk)
-        short_link = f"{request.build_absolute_uri('/').rstrip('/')}/s/{recipe.id}"
+        short_link_path = reverse('short-link', kwargs={'pk': recipe.id})
+        short_link = request.build_absolute_uri(short_link_path)
         return Response({'short-link': short_link})
 
     @action(
@@ -212,7 +215,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         # Получаем все рецепты из корзины пользователя
         shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
         recipes = [item.recipe for item in shopping_cart_items]
-        
+
         # Формируем заголовок текстового файла
         content = "Foodgram - список покупок\n"
         content += f"Пользователь: {request.user.username}\n"
@@ -226,14 +229,15 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 filename='shopping_list.txt',
                 content_type='text/plain; charset=utf-8'
             )
-            
+
         # Добавляем информацию о рецептах и авторах
         content += "Рецепты в вашем списке:\n"
         for i, recipe in enumerate(recipes, 1):
-            content += f"{i}. {recipe.name} - автор: {recipe.author.username}\n"
-        
+            content += (f"{i}. {recipe.name} - "
+                        f"автор: {recipe.author.username}\n")
+
         content += "\nИнгредиенты для приготовления:\n"
-        
+
         # Получаем данные ингредиентов из корзины
         shoppingcart = ShoppingCart.objects.filter(
             user=request.user
@@ -255,7 +259,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
                     ingredients[name][0] + amount,
                     measure
                 )
-        
+
         # Добавляем ингредиенты в файл
         for i, (ingredient, data) in enumerate(ingredients.items(), 1):
             amount, measure = data
@@ -285,7 +289,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
             if shoppingcart_status:
                 return Response(
-                    {'errors': f'Рецепт "{recipe.name}" уже в вашем списке покупок!'},
+                    {'errors': f'Рецепт "{recipe.name}" уже есть в списке!'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -321,7 +325,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
             if favorite_status:
                 return Response(
-                    {'errors': f'Рецепт "{recipe.name}" уже есть в избранном!'},
+                    {'errors': f'Рецепт "{recipe.name}" уже в избранном!'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
