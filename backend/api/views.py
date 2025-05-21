@@ -145,7 +145,7 @@ class CustomUserViewSet(UserViewSet):
 
             if not created:
                 return Response(
-                    {'errors': 'Вы уже подписаны на этого автора!'},
+                    {'errors': f'Вы уже подписаны на {author.username}!'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -199,8 +199,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def get_short_link(self, request, pk=None):
         """Генерирует короткую ссылку на рецепт."""
         recipe = get_object_or_404(Recipe, id=pk)
-        base_url = request.build_absolute_uri('/').rstrip('/')
-        short_link = f"{base_url}/s/{recipe.id}"
+        short_link = f"{request.build_absolute_uri('/').rstrip('/')}/s/{recipe.id}"
         return Response({'short-link': short_link})
 
     @action(
@@ -210,18 +209,43 @@ class RecipesViewSet(viewsets.ModelViewSet):
     )
     def download_shopping_cart(self, request):
         """Скачивает список покупок в формате TXT."""
-        # Получаем данные из корзины
+        # Получаем все рецепты из корзины пользователя
+        shopping_cart_items = ShoppingCart.objects.filter(user=request.user)
+        recipes = [item.recipe for item in shopping_cart_items]
+        
+        # Формируем заголовок текстового файла
+        content = "Foodgram - список покупок\n"
+        content += f"Пользователь: {request.user.username}\n"
+        content += f"Дата: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
+
+        if not recipes:
+            content += "Ваш список покупок пуст."
+            return FileResponse(
+                content,
+                as_attachment=True,
+                filename='shopping_list.txt',
+                content_type='text/plain; charset=utf-8'
+            )
+            
+        # Добавляем информацию о рецептах и авторах
+        content += "Рецепты в вашем списке:\n"
+        for i, recipe in enumerate(recipes, 1):
+            content += f"{i}. {recipe.name} - автор: {recipe.author.username}\n"
+        
+        content += "\nИнгредиенты для приготовления:\n"
+        
+        # Получаем данные ингредиентов из корзины
         shoppingcart = ShoppingCart.objects.filter(
             user=request.user
-        ).values('recipe_id__ingredients__name').annotate(
-            amount=F('recipe_id__recipeingredients__amount'),
-            measure=F('recipe_id__ingredients__measurement_unit')
-        ).order_by('recipe_id__ingredients__name')
+        ).values('recipe__ingredients__name').annotate(
+            amount=F('recipe__recipeingredients__amount'),
+            measure=F('recipe__ingredients__measurement_unit')
+        ).order_by('recipe__ingredients__name')
 
         # Агрегируем ингредиенты
         ingredients = {}
         for ingredient in shoppingcart:
-            name = ingredient['recipe_id__ingredients__name']
+            name = ingredient['recipe__ingredients__name']
             amount = ingredient['amount']
             measure = ingredient['measure']
             if name not in ingredients:
@@ -231,19 +255,11 @@ class RecipesViewSet(viewsets.ModelViewSet):
                     ingredients[name][0] + amount,
                     measure
                 )
-
-        # Формируем текстовый файл
-        content = "Foodgram - список покупок\n"
-        content += f"Пользователь: {request.user.username}\n"
-        content += f"Дата: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
-
-        if not ingredients:
-            content += "Ваш список покупок пуст."
-        else:
-            content += "Ингредиенты:\n"
-            for i, (ingredient, data) in enumerate(ingredients.items(), 1):
-                amount, measure = data
-                content += f"{i}. {ingredient} - {amount} {measure}\n"
+        
+        # Добавляем ингредиенты в файл
+        for i, (ingredient, data) in enumerate(ingredients.items(), 1):
+            amount, measure = data
+            content += f"{i}. {ingredient} - {amount} {measure}\n"
 
         return FileResponse(
             content,
@@ -254,13 +270,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     @action(
         methods=['POST', 'DELETE'],
-        detail=False,
-        permission_classes=[IsAuthenticated, ],
-        url_path=r'(?P<id>\d+)/shopping_cart'
+        detail=True,
+        permission_classes=[IsAuthenticated, ]
     )
-    def shopping_cart(self, request, id):
+    def shopping_cart(self, request, pk=None):
         """Добавляет или удаляет рецепт из списка покупок."""
-        recipe = get_object_or_404(Recipe, id=id)
+        recipe = get_object_or_404(Recipe, id=pk)
 
         if request.method == 'POST':
             shoppingcart_status = ShoppingCart.objects.filter(
@@ -269,11 +284,10 @@ class RecipesViewSet(viewsets.ModelViewSet):
             ).exists()
 
             if shoppingcart_status:
-                ShoppingCart.objects.filter(
-                    user=request.user,
-                    recipe=recipe
-                ).delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
+                return Response(
+                    {'errors': f'Рецепт "{recipe.name}" уже в вашем списке покупок!'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             ShoppingCart.objects.create(user=request.user, recipe=recipe)
             serializer = GetRecipeSerializer(
@@ -292,13 +306,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     @action(
         methods=['POST', 'DELETE'],
-        detail=False,
-        permission_classes=[IsAuthenticated, ],
-        url_path=r'(?P<id>\d+)/favorite'
+        detail=True,
+        permission_classes=[IsAuthenticated, ]
     )
-    def favorite(self, request, id):
+    def favorite(self, request, pk=None):
         """Добавляет или удаляет рецепт из избранного."""
-        recipe = get_object_or_404(Recipe, id=id)
+        recipe = get_object_or_404(Recipe, id=pk)
 
         if request.method == 'POST':
             favorite_status = FavoriteRecipes.objects.filter(
@@ -307,11 +320,10 @@ class RecipesViewSet(viewsets.ModelViewSet):
             ).exists()
 
             if favorite_status:
-                FavoriteRecipes.objects.filter(
-                    user=request.user,
-                    recipe=recipe
-                ).delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
+                return Response(
+                    {'errors': f'Рецепт "{recipe.name}" уже есть в избранном!'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             FavoriteRecipes.objects.create(user=request.user, recipe=recipe)
             serializer = GetRecipeSerializer(

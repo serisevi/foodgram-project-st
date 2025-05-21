@@ -22,72 +22,49 @@ class SubscribersInline(admin.TabularInline):
     extra = 0
 
 
-class HasRecipesFilter(admin.SimpleListFilter):
+class BaseHasRelationFilter(admin.SimpleListFilter):
+    """Базовый класс для фильтров по наличию связей."""
+
+    LOOKUP_CHOICES = (('1', 'Есть'), ('0', 'Нет'),)
+    # Должен быть определен в дочерних классах
+    relation_field = None
+
+    def lookups(self, request, model_admin):
+        return self.LOOKUP_CHOICES
+
+    def queryset(self, request, queryset):
+        if self.value() == '1':
+            return queryset.filter(**{
+                f'{self.relation_field}__isnull': False
+            }).distinct()
+        if self.value() == '0':
+            return queryset.filter(**{
+                f'{self.relation_field}__isnull': True
+            })
+
+
+class HasRecipesFilter(BaseHasRelationFilter):
     title = 'Есть рецепты'
     parameter_name = 'has_recipes'
-
-    def lookups(self, request, model_admin):
-        return (
-            ('1', 'Есть'),
-            ('0', 'Нет'),
-        )
-
-    def queryset(self, request, queryset):
-        if self.value() == '1':
-            return queryset.filter(recipes__isnull=False).distinct()
-        if self.value() == '0':
-            return queryset.filter(recipes__isnull=True)
+    relation_field = 'recipes'
 
 
-class HasSubscriptionsFilter(admin.SimpleListFilter):
+class HasSubscriptionsFilter(BaseHasRelationFilter):
     title = 'Есть подписки'
     parameter_name = 'has_subscriptions'
-
-    def lookups(self, request, model_admin):
-        return (
-            ('1', 'Есть'),
-            ('0', 'Нет'),
-        )
-
-    def queryset(self, request, queryset):
-        if self.value() == '1':
-            return queryset.filter(subscribers__isnull=False).distinct()
-        if self.value() == '0':
-            return queryset.filter(subscribers__isnull=True)
+    relation_field = 'subscribers'
 
 
-class HasFollowersFilter(admin.SimpleListFilter):
+class HasFollowersFilter(BaseHasRelationFilter):
     title = 'Есть подписчики'
     parameter_name = 'has_followers'
-
-    def lookups(self, request, model_admin):
-        return (
-            ('1', 'Есть'),
-            ('0', 'Нет'),
-        )
-
-    def queryset(self, request, queryset):
-        if self.value() == '1':
-            return queryset.filter(authors__isnull=False).distinct()
-        if self.value() == '0':
-            return queryset.filter(authors__isnull=True)
+    relation_field = 'authors'
 
 
-class HasRecipesIngredientFilter(admin.SimpleListFilter):
+class HasRecipesIngredientFilter(BaseHasRelationFilter):
     title = 'Есть в рецептах'
     parameter_name = 'has_recipes'
-
-    def lookups(self, request, model_admin):
-        return (
-            ('1', 'Есть'),
-            ('0', 'Нет'),
-        )
-
-    def queryset(self, request, queryset):
-        if self.value() == '1':
-            return queryset.filter(recipes__isnull=False).distinct()
-        if self.value() == '0':
-            return queryset.filter(recipes__isnull=True)
+    relation_field = 'recipes'
 
 
 class UserAdmin(BaseUserAdmin):
@@ -108,35 +85,18 @@ class UserAdmin(BaseUserAdmin):
         """Возвращает количество подписок пользователя."""
         return obj.subscribers.count()
 
-    @admin.display(description='Есть рецепты')
-    def has_recipes(self, obj):
-        """Проверяет наличие рецептов у пользователя."""
-        return obj.recipes.exists()
-    has_recipes.boolean = True
-
-    @admin.display(description='Есть подписки')
-    def has_subscriptions(self, obj):
-        """Проверяет наличие подписок у пользователя."""
-        return obj.subscribers.exists()
-    has_subscriptions.boolean = True
-
-    @admin.display(description='Есть подписчики')
-    def has_followers(self, obj):
-        """Проверяет наличие подписчиков у пользователя."""
-        return obj.authors.exists()
-    has_followers.boolean = True
-
+    @mark_safe
     @admin.display(description='Аватар')
     def avatar_preview(self, obj):
         """Отображает аватар пользователя."""
         if obj.avatar:
-            return mark_safe(
+            return (
                 '<img src="{}" width="50" height="50" '
                 'style="border-radius: 50%; object-fit: cover;" />'.format(
                     obj.avatar.url
                 )
             )
-        return mark_safe(
+        return (
             '<div style="width: 50px; height: 50px; background-color: #ccc; '
             'border-radius: 50%; display: flex; align-items: center; '
             'justify-content: center; color: #fff; font-weight: bold;">'
@@ -195,12 +155,6 @@ class IngredientAdmin(ImportExportActionModelAdmin, admin.ModelAdmin):
         """Возвращает количество рецептов с этим ингредиентом."""
         return obj.recipes.count()
 
-    @admin.display(description='Есть в рецептах')
-    def has_recipes(self, obj):
-        """Проверяет наличие ингредиента в рецептах."""
-        return obj.recipes.exists()
-    has_recipes.boolean = True
-
     list_display = (
         'id',
         'name',
@@ -223,18 +177,17 @@ class RecipeIngredientInline(admin.TabularInline):
 class RecipeAdmin(admin.ModelAdmin):
     """Админ-модель для управления рецептами."""
 
+    @mark_safe
     @admin.display(description='Ингредиенты')
     def get_ingredients(self, obj):
         """Получает список ингредиентов рецепта."""
         ingredients = obj.recipeingredients.all()
-        return (
-            ', '.join(
-                [
-                    f'{ingredient.ingredient} - {ingredient.amount} '
-                    f'{ingredient.ingredient.measurement_unit}'
-                    for ingredient in ingredients
-                ]
-            )
+        return '<br>'.join(
+            [
+                f'{ingredient.ingredient.name} - {ingredient.amount} '
+                f'{ingredient.ingredient.measurement_unit}'
+                for ingredient in ingredients
+            ]
         )
 
     @admin.display(description='В избранном')
@@ -242,28 +195,30 @@ class RecipeAdmin(admin.ModelAdmin):
         """Отображает кол-во пользователей, добавивших рецепт в избранное."""
         return obj.favoriterecipes.count()
 
+    @mark_safe
     @admin.display(description='Изображение')
     def image_preview(self, obj):
         """Отображает изображение рецепта."""
         if obj.image:
-            return mark_safe(
+            return (
                 '<img src="{}" width="100" height="75" '
                 'style="object-fit: cover; border-radius: 5px;" />'.format(
                     obj.image.url
                 )
             )
-        return mark_safe(
+        return (
             '<div style="width: 100px; height: 75px; '
             'background-color: #f0f0f0; display: flex; '
             'align-items: center; justify-content: center; '
             'border-radius: 5px;">Нет фото</div>'
         )
 
+    @mark_safe
     @admin.display(description='Автор')
     def author_with_avatar(self, obj):
         """Отображает автора с аватаром."""
         if hasattr(obj.author, 'avatar') and obj.author.avatar:
-            return mark_safe(
+            return (
                 '<div style="display: flex; align-items: center;">'
                 '<img src="{}" width="30" height="30" '
                 'style="border-radius: 50%; margin-right: 8px; '
@@ -271,7 +226,7 @@ class RecipeAdmin(admin.ModelAdmin):
                     obj.author.avatar.url, obj.author.username
                 )
             )
-        return mark_safe(
+        return (
             '<div style="display: flex; align-items: center;">'
             '<div style="width: 30px; height: 30px; '
             'background-color: #ccc; border-radius: 50%; '

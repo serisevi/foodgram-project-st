@@ -65,22 +65,55 @@ if [ -f "/app/data/ingredients.json" ]; then
     python manage.py shell -c "
 import json
 from recipes.models import Ingredient
+import time
 
-# Очищаем таблицу ингредиентов перед импортом
-Ingredient.objects.all().delete()
+# Подсчитываем количество существующих ингредиентов
+existing_count = Ingredient.objects.count()
+print(f'Found {existing_count} existing ingredients in database')
 
-# Загружаем данные из JSON файла
-with open('/app/data/ingredients.json', 'r', encoding='utf-8') as f:
-    ingredients_data = json.load(f)
+if existing_count == 0:
+    print('Database is empty. Importing all ingredients...')
+    # Загружаем данные из JSON файла
+    with open('/app/data/ingredients.json', 'r', encoding='utf-8') as f:
+        ingredients_data = json.load(f)
 
-# Импортируем данные в таблицу ingredients
-for item in ingredients_data:
-    Ingredient.objects.create(
-        name=item.get('name'),
-        measurement_unit=item.get('measurement_unit')
+    # Используем bulk_create для быстрого добавления всех ингредиентов
+    ingredients_to_create = [
+        Ingredient(
+            name=item.get('name'),
+            measurement_unit=item.get('measurement_unit')
+        ) for item in ingredients_data
+    ]
+    
+    Ingredient.objects.bulk_create(ingredients_to_create)
+    print(f'Successfully imported {len(ingredients_data)} ingredients into the database')
+else:
+    print('Database already has ingredients. Importing only missing ingredients...')
+    # Загружаем данные из JSON файла
+    with open('/app/data/ingredients.json', 'r', encoding='utf-8') as f:
+        ingredients_data = json.load(f)
+
+    # Получаем все существующие комбинации имени и единицы измерения
+    existing_combinations = set(
+        Ingredient.objects.values_list('name', 'measurement_unit')
     )
-
-print(f'Successfully imported {len(ingredients_data)} ingredients into the database')
+    
+    # Счетчики для статистики
+    created_count = 0
+    skipped_count = 0
+    
+    # Создаем только те ингредиенты, которых нет в базе
+    for item in ingredients_data:
+        name = item.get('name')
+        unit = item.get('measurement_unit')
+        
+        if (name, unit) not in existing_combinations:
+            Ingredient.objects.create(name=name, measurement_unit=unit)
+            created_count += 1
+        else:
+            skipped_count += 1
+    
+    print(f'Results: {created_count} ingredients added, {skipped_count} already existed')
 "
     echo "Ingredients loaded successfully into ingredients table"
 else

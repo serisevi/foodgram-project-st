@@ -173,11 +173,7 @@ class AddRecipeIngredientSerializer(serializers.ModelSerializer):
         queryset=Ingredient.objects.all(),
         source='ingredient'
     )
-    amount = serializers.IntegerField(
-        min_value=1,
-        max_value=32767,
-        help_text='Количество ингредиента в рецепте (от 1 до 32767)'
-    )
+    amount = serializers.IntegerField( min_value=1)
 
     class Meta:
         model = RecipeIngredient
@@ -188,11 +184,7 @@ class AddRecipeSerializer(serializers.ModelSerializer):
     ingredients = AddRecipeIngredientSerializer(many=True, write_only=True)
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
     image = Base64ImageField()
-    cooking_time = serializers.IntegerField(
-        min_value=1,
-        max_value=2147483647,
-        help_text='Время приготовления в минутах (от 1 до 2147483647)'
-    )
+    cooking_time = serializers.IntegerField(min_value=1)
     name = serializers.CharField(max_length=200)
     text = serializers.CharField()
     is_favorited = serializers.BooleanField(read_only=True)
@@ -213,13 +205,13 @@ class AddRecipeSerializer(serializers.ModelSerializer):
         )
 
     def add_ingredients(self, ingredients, recipe):
-        RecipeIngredient.objects.bulk_create([
+        RecipeIngredient.objects.bulk_create(
             RecipeIngredient(
                 recipe=recipe,
                 ingredient=ingredient['ingredient'],
                 amount=ingredient['amount']
             ) for ingredient in ingredients
-        ])
+        )
 
     def validate(self, data):
         ingredients = data.get('ingredients')
@@ -236,10 +228,6 @@ class AddRecipeSerializer(serializers.ModelSerializer):
             })
 
         if 'image' in data and not data.get('image'):
-            raise serializers.ValidationError({
-                'image': 'Укажите картинку для рецепта!'
-            })
-        elif not self.instance and not data.get('image'):
             raise serializers.ValidationError({
                 'image': 'Укажите картинку для рецепта!'
             })

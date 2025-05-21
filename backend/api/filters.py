@@ -26,7 +26,7 @@ class RecipesFilter(rest_framework.FilterSet):
     class Meta:
         """Метаданные фильтра."""
         model = Recipe
-        fields = ('author', 'is_favorited', 'is_in_shopping_cart')
+        fields = ('author',)
 
     def filter_is_favorited(self, queryset, name, value):
         """Фильтрует избранные рецепты пользователя."""
